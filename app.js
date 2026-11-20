@@ -3,12 +3,15 @@
 const $ = s => document.querySelector(s);
 const T = { de: { bestand: "Bestand", lager: "Lager", verbrauch: "Verbrauch", rollen: "Rollen", offline: "Ohne Verbindung – zeige den zuletzt geladenen Stand.",
   nochnie: "Noch kein Stand geladen. Mit Internet öffnen und das Programm einmal synchronisieren lassen.", falsch: "Passwort stimmt nicht.", suche: "Suchen …",
-  voll: "ungeöffnet", leer: "leer", stand: "Stand", keinlager: "Kein Lager eingerichtet.", ohne: "Ohne Lagerort", platzfrei: "frei", im_drucker: "im Drucker",
+  voll: "ungeöffnet", leer: "leer", stand: "Stand", keinlager: "Kein Lager eingerichtet.", ohne: "Ohne Lagerort", alleauf: "Alle aufklappen", allezu: "Alle zuklappen", platzfrei: "frei", im_drucker: "im Drucker",
   rest: "Rest", min: "Mindestbestand", keinverb: "Noch keine Drucke gebucht.", zurueck: "← Zurück", nichts: "Nichts gefunden.", imdrucker: "Im Drucker", leerrolle: "leer", keinedr: "Zurzeit ist keine Rolle einem Fach zugeordnet." },
   en: { bestand: "Stock", lager: "Storage", verbrauch: "Usage", rollen: "spools", offline: "Offline – showing the last loaded state.",
   nochnie: "Nothing loaded yet. Open with internet and let the program sync once.", falsch: "Wrong password.", suche: "Search …",
-  voll: "unopened", leer: "empty", stand: "Updated", keinlager: "No storage set up.", ohne: "No location", platzfrei: "free", im_drucker: "in printer",
+  voll: "unopened", leer: "empty", stand: "Updated", keinlager: "No storage set up.", ohne: "No location", alleauf: "Expand all", allezu: "Collapse all", platzfrei: "free", im_drucker: "in printer",
   rest: "Left", min: "Minimum", keinverb: "No prints booked yet.", zurueck: "← Back", nichts: "Nothing found.", imdrucker: "In the printer", leerrolle: "empty", keinedr: "No spool is assigned to a slot right now." } };
+const zuLesen = () => { try { return JSON.parse(localStorage.getItem("fb_zu") || "[]"); } catch (e) { return []; } };
+const zuSpeichern = l => { try { localStorage.setItem("fb_zu", JSON.stringify(l)); } catch (e) {} };
+let ZU = new Set(zuLesen());
 let S = null, SPR = "de", FOTOS = {}, tab = "bestand", offline = false, suche = "";
 const t = k => (T[SPR] || T.de)[k] || k;
 const nR = n => n + " " + (n === 1 ? (SPR === "en" ? "spool" : "Rolle") : t("rollen"));
@@ -86,10 +89,17 @@ function box(x) {
 function lager() {
   if (!S.lager.length) return `<p class="leer-text">${t("keinlager")}</p>`;
   const rolle = {}; S.sorten.forEach(s => s.rollen.forEach(r => { rolle[r.uid] = { r, s }; }));
-  return S.lager.map(k => `<section class="moebel"><h3>${esc(k.ohne ? t("ohne") : k.titel)}</h3>` + k.reihen.map(r => `<div class="reihe">${r.ort || r.name ? `<h4>${esc(r.ort || r.name)}</h4>` : ""}<div class="regal">` +
-    r.slots.map(u => { if (u === null) return `<span class="box frei"></span>`;
-      if (u === "leer") return `<span class="box leerrolle"><span>${t("leerrolle")}</span></span>`;
-      const x = rolle[u]; return x ? box(x) : `<span class="box frei"></span>`; }).join("") + `</div></div>`).join("") + `</section>`).join("");
+  const kopf = `<div class="aufzu"><button data-aufzu="auf">${t("alleauf")}</button><button data-aufzu="zu">${t("allezu")}</button></div>`;
+  return kopf + S.lager.map((k, n) => {
+    const name = k.ohne ? t("ohne") : k.titel, id = k.ohne ? "#ohne" : name, zu = ZU.has(id);
+    const anzahl = k.reihen.reduce((a, r) => a + r.slots.filter(u => u && u !== "leer" && rolle[u]).length, 0);
+    const imdr = k.reihen.some(r => r.slots.some(u => u && rolle[u] && rolle[u].r.drucker));
+    return `<section class="moebel ${zu ? "eingeklappt" : ""}"><button class="mk" data-m="${esc(id)}" aria-expanded="${!zu}"><span class="pf">▾</span><span class="mn">${esc(name)}</span>${imdr ? `<span class="mdr"></span>` : ""}<small>${anzahl}</small></button>` +
+      `<div class="mi">` + k.reihen.map(r => `<div class="reihe">${r.ort || r.name ? `<h4>${esc(r.ort || r.name)}</h4>` : ""}<div class="regal">` +
+      r.slots.map(u => { if (u === null) return `<span class="box frei"></span>`;
+        if (u === "leer") return `<span class="box leerrolle"><span>${t("leerrolle")}</span></span>`;
+        const x = rolle[u]; return x ? box(x) : `<span class="box frei"></span>`; }).join("") + `</div></div>`).join("") + `</div></section>`;
+  }).join("");
 }
 function verbrauch() {
   if (!S.verbrauch.length) return `<p class="leer-text">${t("keinverb")}</p>`;
@@ -109,6 +119,9 @@ function zeichnen() {
   bind();
 }
 function bind() {
+  document.querySelectorAll(".mk").forEach(b => b.onclick = () => { const id = b.dataset.m, sec = b.parentElement;
+    if (ZU.has(id)) ZU.delete(id); else ZU.add(id); zuSpeichern([...ZU]); sec.classList.toggle("eingeklappt", ZU.has(id)); b.setAttribute("aria-expanded", !ZU.has(id)); });
+  document.querySelectorAll("[data-aufzu]").forEach(b => b.onclick = () => { ZU = b.dataset.aufzu === "zu" ? new Set([...S.lager.map(k => k.ohne ? "#ohne" : k.titel)]) : new Set(); zuSpeichern([...ZU]); zeichnen(); });
   document.querySelectorAll(".sorte").forEach(b => b.onclick = () => detail(+b.dataset.i));
   document.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { for (const s of S.sorten) if (s.rollen.some(r => r.uid === b.dataset.u)) return detail(s.i, b.dataset.u); });
 }
