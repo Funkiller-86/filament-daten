@@ -56,7 +56,7 @@ input[type=search],#pw{width:100%;padding:12px;border-radius:12px;border:1px sol
 .imdr{margin-bottom:12px}.imdr h3{margin:4px 0 6px;font-size:16px;color:var(--blau)}
 .dr{display:flex;gap:12px;align-items:center;background:var(--kachel);border:1px solid var(--blau);border-radius:14px;padding:8px 12px;margin-bottom:6px;width:100%;color:inherit;text-align:left;font:inherit;box-shadow:0 0 10px #2f9bff44}
 .dr .t{flex:1;min-width:0}.dr b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dr small{color:var(--grau);display:block}
-.sorte.indr{border-color:var(--blau)}.blau{color:var(--blau);font-weight:600}
+.blau{color:var(--blau);font-weight:600}
 @media (prefers-reduced-motion:reduce){.box.drucker{animation:none;box-shadow:0 0 10px 2px #2f9bff}}
 
 /* Lager: Möbel auf- und zuklappen */
