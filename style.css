@@ -58,3 +58,10 @@ input[type=search],#pw{width:100%;padding:12px;border-radius:12px;border:1px sol
 .dr .t{flex:1;min-width:0}.dr b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dr small{color:var(--grau);display:block}
 .sorte.indr{border-color:var(--blau)}.blau{color:var(--blau);font-weight:600}
 @media (prefers-reduced-motion:reduce){.box.drucker{animation:none;box-shadow:0 0 10px 2px #2f9bff}}
+
+/* Lager: Möbel auf- und zuklappen */
+.aufzu{display:flex;gap:8px;margin-bottom:10px}.aufzu button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--rand);background:var(--kachel);color:var(--grau);font-size:14px}
+.mk{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin:4px 0 6px;border-radius:12px;border:1px solid var(--rand);background:var(--kachel);color:var(--orange);font:inherit;font-size:16px;font-weight:600;text-align:left}
+.mk .mn{flex:none}.mk small{margin-left:auto;color:var(--grau);font-weight:400}.mk .pf{display:inline-block;transition:transform .15s;color:var(--grau)}
+.mdr{width:10px;height:10px;border-radius:50%;background:var(--blau);box-shadow:0 0 8px var(--blau)}
+.moebel.eingeklappt .pf{transform:rotate(-90deg)}.moebel.eingeklappt .mi{display:none}
