@@ -31,3 +31,30 @@ input[type=search],#pw{width:100%;padding:12px;border-radius:12px;border:1px sol
 .rolle img{width:100%;max-height:300px;object-fit:contain;border-radius:10px;background:#0006;margin-top:8px}
 .balken{height:10px;border-radius:6px;background:#0006;overflow:hidden;margin:6px 0}.balken i{display:block;height:100%;background:var(--gruen)}
 .leer-text{color:var(--grau);text-align:center;margin-top:40px}
+
+/* Lager: Rollen als Boxen wie am PC */
+.regal{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:10px 8px;padding:4px 2px 6px}
+.box{position:relative;display:flex;flex-direction:column;align-items:stretch;aspect-ratio:76/124;border-radius:10px;border:1px solid #4a4038;padding:0;overflow:hidden;color:#f3ece5;font:inherit;
+  background:linear-gradient(#2a2420,#17120f);box-shadow:0 4px 8px #0008;min-width:0}
+.bk{display:flex;flex-direction:column;align-items:center;justify-content:center;height:19%;background:color-mix(in srgb,var(--m) 25%,transparent);border-bottom:2px solid var(--m);line-height:1.05}
+.bk b{font-size:12px;color:var(--m)}.bk i{font-style:normal;font-size:8px;color:#f3ece5}
+.fw{position:relative;margin:5% 8% 0;height:51%;border-radius:5px;background:#0b0908;border:1px solid #fff3;overflow:hidden;display:block}
+.fu{position:absolute;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,#0000 0 3px,#0003 3px 4px),linear-gradient(90deg,color-mix(in srgb,var(--c) 72%,#fff),var(--c) 45%,color-mix(in srgb,var(--c) 65%,#000));display:block}
+.fw::before{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(90deg,#fff3,#0000 25%,#0000 40%,#0006);pointer-events:none;
+  background-image:linear-gradient(#fffc,#fffc),linear-gradient(#fffc,#fffc),linear-gradient(#fffc,#fffc),linear-gradient(90deg,#fff3,#0000 25%,#0000 40%,#0006);
+  background-size:5px 1px,5px 1px,5px 1px,100% 100%;background-position:0 25%,0 50%,0 75%,0 0;background-repeat:no-repeat}
+.gw{font-weight:700;font-size:12px;text-align:center;margin-top:5%}.gw.wenig{color:#ff7a70}
+.fn{font-size:8.5px;color:#a99e93;text-align:center;padding:0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.box.frei{background:none;border:2px dashed var(--rand);box-shadow:none}
+.box.leerrolle{background:none;border:2px dashed #6a5f55;box-shadow:none;align-items:center;justify-content:center;color:var(--grau);font-size:11px}
+.box.drucker{border-color:#2f9bff;animation:blau 2.4s ease-in-out infinite}
+.box.drucker::after{content:"";position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2f9bff;border:1px solid #061226;
+  clip-path:none;background-image:linear-gradient(135deg,#0000 0 0);box-shadow:inset 0 0 0 0 #0000}
+.box.drucker::before{content:"";position:absolute;top:6px;right:6px;z-index:3;border-left:6px solid #061226;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;width:0;height:0}
+@keyframes blau{0%,100%{box-shadow:0 0 0 1px #2f9bff,0 0 6px 1px #2f9bff99,0 4px 8px #0008}50%{box-shadow:0 0 0 2px #2f9bff,0 0 16px 4px #2f9bff,0 4px 8px #0008}}
+/* Bestand: Im Drucker */
+.imdr{margin-bottom:12px}.imdr h3{margin:4px 0 6px;font-size:16px;color:var(--blau)}
+.dr{display:flex;gap:12px;align-items:center;background:var(--kachel);border:1px solid var(--blau);border-radius:14px;padding:8px 12px;margin-bottom:6px;width:100%;color:inherit;text-align:left;font:inherit;box-shadow:0 0 10px #2f9bff44}
+.dr .t{flex:1;min-width:0}.dr b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dr small{color:var(--grau);display:block}
+.sorte.indr{border-color:var(--blau)}.blau{color:var(--blau);font-weight:600}
+@media (prefers-reduced-motion:reduce){.box.drucker{animation:none;box-shadow:0 0 10px 2px #2f9bff}}
