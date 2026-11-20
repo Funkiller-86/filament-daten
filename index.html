@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14171c"><link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Filament-Bestand</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header id="kopf"><h1>Filament</h1><span id="stand"></span><button id="neu" aria-label="Aktualisieren">⟳</button></header>
+<nav id="tabs"><button data-t="bestand" class="an">Bestand</button><button data-t="lager">Lager</button><button data-t="verbrauch">Verbrauch</button></nav>
+<main id="inhalt"></main>
+<div id="login" hidden><form id="lf"><h2>Filament-Bestand</h2>
+<p>Passwort aus den Handy-App-Einstellungen des Programms:</p>
+<input id="pw" type="password" autocomplete="current-password" placeholder="Passwort" required>
+<button type="submit">Öffnen</button><p id="lfehler" class="fehler"></p></form></div>
+<div id="detail" hidden></div>
+<script src="krypto.js"></script><script src="app.js"></script>
+</body></html>
