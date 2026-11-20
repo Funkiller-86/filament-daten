@@ -4,11 +4,11 @@ const $ = s => document.querySelector(s);
 const T = { de: { bestand: "Bestand", lager: "Lager", verbrauch: "Verbrauch", rollen: "Rollen", offline: "Ohne Verbindung – zeige den zuletzt geladenen Stand.",
   nochnie: "Noch kein Stand geladen. Mit Internet öffnen und das Programm einmal synchronisieren lassen.", falsch: "Passwort stimmt nicht.", suche: "Suchen …",
   voll: "ungeöffnet", leer: "leer", stand: "Stand", keinlager: "Kein Lager eingerichtet.", ohne: "Ohne Lagerort", platzfrei: "frei", im_drucker: "im Drucker",
-  rest: "Rest", min: "Mindestbestand", keinverb: "Noch keine Drucke gebucht.", zurueck: "← Zurück", nichts: "Nichts gefunden." },
+  rest: "Rest", min: "Mindestbestand", keinverb: "Noch keine Drucke gebucht.", zurueck: "← Zurück", nichts: "Nichts gefunden.", imdrucker: "Im Drucker", leerrolle: "leer", keinedr: "Zurzeit ist keine Rolle einem Fach zugeordnet." },
   en: { bestand: "Stock", lager: "Storage", verbrauch: "Usage", rollen: "spools", offline: "Offline – showing the last loaded state.",
   nochnie: "Nothing loaded yet. Open with internet and let the program sync once.", falsch: "Wrong password.", suche: "Search …",
   voll: "unopened", leer: "empty", stand: "Updated", keinlager: "No storage set up.", ohne: "No location", platzfrei: "free", im_drucker: "in printer",
-  rest: "Left", min: "Minimum", keinverb: "No prints booked yet.", zurueck: "← Back", nichts: "Nothing found." } };
+  rest: "Left", min: "Minimum", keinverb: "No prints booked yet.", zurueck: "← Back", nichts: "Nothing found.", imdrucker: "In the printer", leerrolle: "empty", keinedr: "No spool is assigned to a slot right now." } };
 let S = null, SPR = "de", FOTOS = {}, tab = "bestand", offline = false, suche = "";
 const t = k => (T[SPR] || T.de)[k] || k;
 const nR = n => n + " " + (n === 1 ? (SPR === "en" ? "spool" : "Rolle") : t("rollen"));
@@ -53,21 +53,43 @@ const fmt = g => g >= 1000 ? (g / 1000).toFixed(2).replace(".", ",") + " kg" : g
 const restVon = (r, s) => r.rest < 0 ? s.gewicht : r.rest;
 const summe = s => s.rollen.reduce((a, r) => a + restVon(r, s), 0);
 function rolleZeile(r, s) { const v = restVon(r, s); return `${r.status === "neu" ? t("voll") : fmt(v)}`; }
+const imDrucker = s => s.rollen.some(r => r.drucker);
+function druckerBereich() {
+  const f = (S.drucker || []);
+  if (!f.length) return "";
+  const rolle = {}; S.sorten.forEach(s => s.rollen.forEach(r => { rolle[r.uid] = { r, s }; }));
+  return `<section class="imdr"><h3>${t("imdrucker")}</h3>` + f.map(x => {
+    const y = x.uid ? rolle[x.uid] : null;
+    const ort = [x.drucker, x.ams, x.fach ? (SPR === "en" ? "Slot " : "Fach ") + x.fach : ""].filter(Boolean).join(" · ");
+    if (y) return `<button class="dr" data-u="${esc(x.uid)}"><span class="punkt" style="background:${esc(y.s.hex)}"></span><span class="t"><small>${esc(ort)}</small><b>${esc(y.s.marke)} · ${esc(y.s.farbe)}</b><small><span class="mat" style="background:${esc(y.s.mfarbe)}">${esc(y.s.material)}</span>${y.r.status === "neu" ? t("voll") : fmt(restVon(y.r, y.s))}</small></span></button>`;
+    return `<div class="dr"><span class="punkt" style="background:#444"></span><span class="t"><small>${esc(ort)}</small><b>${esc(x.sorte || "—")}</b></span></div>`;
+  }).join("") + `</section>`;
+}
 function bestand() {
   const q = suche.trim().toLowerCase();
-  const liste = S.sorten.filter(s => !q || `${s.marke} ${s.material} ${s.farbe}`.toLowerCase().includes(q));
+  const liste = S.sorten.filter(s => !q || `${s.marke} ${s.material} ${s.farbe}`.toLowerCase().includes(q)).sort((a, b) => imDrucker(b) - imDrucker(a));
   if (!liste.length) return `<p class="leer-text">${t("nichts")}</p>`;
-  return liste.map(s => { const g = summe(s), knapp = s.min > 0 && s.rollen.length < s.min;
-    return `<button class="sorte" data-i="${s.i}"><span class="punkt" style="background:${esc(s.hex)}"></span><span class="t"><b>${esc(s.marke)} · ${esc(s.farbe)}</b>
-    <small><span class="mat" style="background:${esc(s.mfarbe)}">${esc(s.material)}</span>${nR(s.rollen.length)}</small></span><span class="menge ${knapp ? "knapp" : ""}">${fmt(g)}</span></button>`; }).join("");
+  return liste.map(s => { const g = summe(s), knapp = s.min > 0 && s.rollen.length < s.min, dr = imDrucker(s);
+    return `<button class="sorte ${dr ? "indr" : ""}" data-i="${s.i}"><span class="punkt" style="background:${esc(s.hex)}"></span><span class="t"><b>${esc(s.marke)} · ${esc(s.farbe)}</b>
+    <small><span class="mat" style="background:${esc(s.mfarbe)}">${esc(s.material)}</span>${nR(s.rollen.length)}${dr ? ` · <span class="blau">${t("imdrucker")}</span>` : ""}</small></span><span class="menge ${knapp ? "knapp" : ""}">${fmt(g)}</span></button>`; }).join("");
+}
+function box(x) {
+  const { r, s } = x, v = restVon(r, s), neu = r.status === "neu";
+  const p = neu ? 100 : Math.max(0, Math.min(100, Math.round(v * 100 / s.gewicht)));
+  const [bas, ...rest] = (s.material || "").split(" "), variante = rest.join(" ");
+  const wenig = !neu && p <= 20;
+  return `<button class="box ${r.drucker ? "drucker" : ""}" data-u="${esc(r.uid)}" style="--c:${esc(s.hex)};--m:${esc(s.mfarbe)}" aria-label="${esc(s.marke + " " + s.farbe)}">
+    <span class="bk"><b>${esc(bas.slice(0, 9))}</b>${variante ? `<i>${esc(variante.length > 12 ? variante.slice(0, 11) + "…" : variante)}</i>` : ""}</span>
+    <span class="fw"><span class="fu" style="height:${p}%"></span></span>
+    <span class="gw ${wenig ? "wenig" : ""}">${neu ? fmt(s.gewicht) : fmt(v)}</span><span class="fn">${esc(s.farbe)}</span></button>`;
 }
 function lager() {
   if (!S.lager.length) return `<p class="leer-text">${t("keinlager")}</p>`;
   const rolle = {}; S.sorten.forEach(s => s.rollen.forEach(r => { rolle[r.uid] = { r, s }; }));
-  return S.lager.map(k => `<section class="moebel"><h3>${esc(k.ohne ? t("ohne") : k.titel)}</h3>` + k.reihen.map(r => `<div class="reihe">${r.ort || r.name ? `<h4>${esc(r.ort || r.name)}</h4>` : ""}<div class="plaetze">` +
-    r.slots.map(u => { if (u === "leer" || u === null) return `<span class="platz leer" title="${t("platzfrei")}"></span>`;
-      const x = rolle[u]; if (!x) return `<span class="platz sperre"></span>`;
-      return `<button class="platz ${x.r.drucker ? "drucker" : ""}" data-u="${esc(u)}" style="background:${esc(x.s.hex)}" aria-label="${esc(x.s.marke + " " + x.s.farbe)}"></button>`; }).join("") + `</div></div>`).join("") + `</section>`).join("");
+  return S.lager.map(k => `<section class="moebel"><h3>${esc(k.ohne ? t("ohne") : k.titel)}</h3>` + k.reihen.map(r => `<div class="reihe">${r.ort || r.name ? `<h4>${esc(r.ort || r.name)}</h4>` : ""}<div class="regal">` +
+    r.slots.map(u => { if (u === null) return `<span class="box frei"></span>`;
+      if (u === "leer") return `<span class="box leerrolle"><span>${t("leerrolle")}</span></span>`;
+      const x = rolle[u]; return x ? box(x) : `<span class="box frei"></span>`; }).join("") + `</div></div>`).join("") + `</section>`).join("");
 }
 function verbrauch() {
   if (!S.verbrauch.length) return `<p class="leer-text">${t("keinverb")}</p>`;
@@ -80,7 +102,7 @@ function zeichnen() {
   $("#stand").textContent = `${t("stand")}: ${new Date(S._stand).toLocaleString(SPR === "en" ? "en-GB" : "de-DE", { dateStyle: "short", timeStyle: "short" })}`;
   const keep = tab === "bestand" ? "" : "";
   m.innerHTML = (offline ? `<div class="hinweis">${t("offline")}</div>` : "") +
-    (tab === "bestand" ? `<input type="search" id="q" placeholder="${t("suche")}" value="${esc(suche)}">` : "") +
+    (tab === "bestand" ? druckerBereich() + `<input type="search" id="q" placeholder="${t("suche")}" value="${esc(suche)}">` : "") +
     `<div id="liste">${tab === "bestand" ? bestand() : tab === "lager" ? lager() : verbrauch()}</div>`;
   const q = $("#q"); if (q) q.oninput = () => { suche = q.value; $("#liste").innerHTML = bestand(); bind(); };
   document.querySelectorAll("#tabs button").forEach(b => { b.classList.toggle("an", b.dataset.t === tab); b.textContent = t(b.dataset.t); });
@@ -88,7 +110,7 @@ function zeichnen() {
 }
 function bind() {
   document.querySelectorAll(".sorte").forEach(b => b.onclick = () => detail(+b.dataset.i));
-  document.querySelectorAll(".platz[data-u]").forEach(b => b.onclick = () => { for (const s of S.sorten) if (s.rollen.some(r => r.uid === b.dataset.u)) return detail(s.i, b.dataset.u); });
+  document.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { for (const s of S.sorten) if (s.rollen.some(r => r.uid === b.dataset.u)) return detail(s.i, b.dataset.u); });
 }
 function detail(i, uid) {
   const s = S.sorten.find(x => x.i === i), d = $("#detail");
