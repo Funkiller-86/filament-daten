@@ -65,3 +65,8 @@ input[type=search],#pw{width:100%;padding:12px;border-radius:12px;border:1px sol
 .mk .mn{flex:none}.mk small{margin-left:auto;color:var(--grau);font-weight:400}.mk .pf{display:inline-block;transition:transform .15s;color:var(--grau)}
 .mdr{width:10px;height:10px;border-radius:50%;background:var(--blau);box-shadow:0 0 8px var(--blau)}
 .moebel.eingeklappt .pf{transform:rotate(-90deg)}.moebel.eingeklappt .mi{display:none}
+
+.sorte.aehnlich{opacity:.62}.trefferzahl{color:var(--grau);font-size:13px;margin:-4px 0 8px}
+.box.treffer{outline:3px solid var(--orange);outline-offset:1px}.box.blass{opacity:.28;filter:grayscale(.6)}
+.ledinfo{background:var(--kachel);border:1px solid var(--rand);border-radius:12px;padding:10px 12px;color:var(--grau);font-size:14px;margin:8px 0}
+.ledinfo.an{border-color:var(--orange);color:var(--text)}.ledinfo button{margin-left:8px;padding:6px 10px;border-radius:10px;border:1px solid var(--rand);background:var(--bg);color:var(--text)}
