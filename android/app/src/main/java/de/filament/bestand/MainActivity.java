@@ -6,6 +6,12 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -33,6 +39,9 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setAllowFileAccess(false);
+        // Brücke für die LED-Leisten am Regal: die Web-App ruft FilamentApp.wled(adresse, json) auf, die App schickt es an den
+        // WLED-Controller im Heim-WLAN (http, deshalb nicht direkt aus der https-Seite möglich).
+        web.addJavascriptInterface(new LedBruecke(), "FilamentApp");
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -50,6 +59,45 @@ public class MainActivity extends Activity {
             web.restoreState(savedInstanceState);
         } else {
             web.loadUrl(ADRESSE);
+        }
+    }
+
+    /** Nur Adressen im Heimnetz (192.168.x.x, 10.x.x.x, 172.16–31.x.x), optional mit Port – sonst wird nichts gesendet. */
+    private static final Pattern HEIMNETZ = Pattern.compile(
+            "^(192\\.168\\.\\d{1,3}\\.\\d{1,3}|10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3})(:\\d{1,5})?$");
+
+    private static class LedBruecke {
+        @JavascriptInterface
+        public int version() {
+            return 2;
+        }
+
+        @JavascriptInterface
+        public void wled(final String adresse, final String json) {
+            if (adresse == null || json == null || json.length() > 20000 || !HEIMNETZ.matcher(adresse).matches()) {
+                return;
+            }
+            new Thread(() -> {
+                HttpURLConnection v = null;
+                try {
+                    v = (HttpURLConnection) new URL("http://" + adresse + "/json/state").openConnection();
+                    v.setConnectTimeout(1500);
+                    v.setReadTimeout(1500);
+                    v.setRequestMethod("POST");
+                    v.setDoOutput(true);
+                    v.setRequestProperty("Content-Type", "application/json");
+                    try (OutputStream o = v.getOutputStream()) {
+                        o.write(json.getBytes(StandardCharsets.UTF_8));
+                    }
+                    v.getResponseCode();
+                } catch (Exception ignoriert) {
+                    // Controller nicht erreichbar (nicht im Heim-WLAN): still ignorieren
+                } finally {
+                    if (v != null) {
+                        v.disconnect();
+                    }
+                }
+            }).start();
         }
     }
 
