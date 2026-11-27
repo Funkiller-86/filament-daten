@@ -34,14 +34,29 @@ async function holen(url, bin) {
   return bin ? new Uint8Array(await r.arrayBuffer()) : r.json();
 }
 
+// meta.json zuerst über die GitHub-API (immer aktuell); raw.githubusercontent.com hält Dateien bis zu 5 Minuten im Zwischenspeicher
+async function metaHolen(basis) {
+  const m = basis.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/([^/]+)\/$/);
+  if (m) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${m[1]}/contents/meta.json?ref=${m[2]}&t=${Date.now()}`,
+        { cache: "no-store", headers: { Accept: "application/vnd.github.raw+json" } });
+      if (r.ok) return await r.json();
+    } catch (e) {}
+  }
+  return holen(basis + "meta.json");
+}
+
 async function laden(passwort, still) {
   let cfg, meta;
-  try { cfg = await (await fetch("config.json?t=" + Date.now(), { cache: "no-store" })).json(); meta = await holen(cfg.basis + "meta.json"); } catch (e) { offline = true; return false; }
+  try { cfg = await (await fetch("config.json?t=" + Date.now(), { cache: "no-store" })).json(); meta = await metaHolen(cfg.basis); } catch (e) { offline = true; return false; }
   offline = false;
   const k = await FB.schluessel(passwort, FB.b64(meta.salz), meta.runden);
   try { await FB.entschluesseln(FB.b64(meta.pruef), k); } catch (e) { throw new Error("Passwort"); }
   if (S && S._stand === meta.stand) return true;
-  const stand = await FB.entpacken(await FB.entschluesseln(await holen(cfg.basis + "daten.bin", true), k));
+  // „daten“ = Commit, in dem genau dieser Stand liegt: diese Adresse ändert sich nie, also gibt es keinen alten Zwischenspeicher
+  const datei = meta.daten ? cfg.basis.replace(/[^/]+\/$/, meta.daten + "/") + "daten.bin" : cfg.basis + "daten.bin";
+  const stand = await FB.entpacken(await FB.entschluesseln(await holen(datei, true), k));
   stand._stand = meta.stand;
   const ids = new Set(); stand.sorten.forEach(s => s.rollen.forEach(r => r.foto && ids.add(r.foto)));
   const alt = (await hole("fotos")) || {};
