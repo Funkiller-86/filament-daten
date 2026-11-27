@@ -1,5 +1,5 @@
 // Hält die App-Dateien für den Offline-Betrieb bereit (Daten liegen in IndexedDB, nicht hier).
-const NAME = "filament-app-v5";
+const NAME = "filament-app-v6";
 const DATEIEN = ["./", "index.html", "app.js", "krypto.js", "style.css", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(NAME).then(c => c.addAll(DATEIEN)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n !== NAME).map(n => caches.delete(n)))).then(() => self.clients.claim())); });
